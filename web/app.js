@@ -16,7 +16,7 @@
 
   // ---- नीचे से उठने वाला पॉपअप ----
   var sheetEl = null;
-  function closeSheet() { if (sheetEl) { sheetEl.remove(); sheetEl = null; document.body.classList.remove('lock'); } }
+  function closeSheet() { stopAudio(); if (sheetEl) { sheetEl.remove(); sheetEl = null; document.body.classList.remove('lock'); } }
   function openSheet(title, kids) {
     closeSheet();
     var back = h('div', 'scrim'), card = h('div', 'sheet', [h('h2', '', [title])].concat(kids));
@@ -26,6 +26,19 @@
     return card;
   }
 
+  // ---- "सुनिए": कम पढ़े-लिखे लोगों के लिए आवाज़ में समझाइश ----
+  var player = null;
+  function stopAudio() { if (player) { player.pause(); player = null; } }
+  function listenBtn(file) {
+    var b = btn('🔊 सुनिए', 'ghost', function () {
+      if (player) { stopAudio(); b.textContent = '🔊 सुनिए'; return; }
+      player = new Audio('/media/voice/' + file); b.textContent = '⏹ रोकिए';
+      player.addEventListener('ended', function () { player = null; b.textContent = '🔊 सुनिए'; });
+      player.play().catch(function () { player = null; b.textContent = '🔊 सुनिए'; });
+    });
+    return b;
+  }
+
   // ---- सहमति: एक साफ़ क्रिया "सहमत हूँ, आगे बढ़ें" (पहले से कोई टिक नहीं; समय-मुहर के साथ दर्ज) ----
   function askConsent(next) {
     var mkt = h('input'); mkt.type = 'checkbox'; mkt.id = 'c-mkt'; mkt.checked = false;
@@ -33,7 +46,7 @@
     openSheet('आगे बढ़ने से पहले', [
       h('p', 'lead', ['मैं पुष्टि करता/करती हूँ कि मेरी उम्र 18 साल या उससे ज़्यादा है, और मैंने प्राइवेसी नोटिस पढ़कर उससे सहमति दी है।']),
       h('p', 'fine', ['हम सिर्फ़ ज़रूरी जानकारी लेते हैं, जो भारत में सुरक्षित रहती है। सहमति आप कभी भी सेटिंग से वापस ले सकते हैं, और माँगने पर आपका डेटा मिटा दिया जाएगा।']),
-      mk,
+      mk, listenBtn('v02_sahmati.mp3'),
       btn('सहमत हूँ, आगे बढ़ें', '', function () {
         var c = { privacy: true, age: true, marketing: mkt.checked };
         try { sessionStorage.setItem('mx.pc', JSON.stringify(c)); } catch (e) {}
@@ -85,11 +98,16 @@
       try { await A.verifyCode(e, code.value); await recordConsent(savedConsent()); home(); } catch (er) { msg.textContent = er.message; ok.disabled = false; }
     });
     openSheet('अपना ईमेल खोलिए', [
-      h('p', 'lead', [e + ' पर ईमेल भेजा गया है। उसे खोलकर लिंक दबाइए। स्पैम फ़ोल्डर भी देख लीजिए।']),
-      mailLink('Gmail खोलें', 'https://mail.google.com/'),
+      h('p', 'lead', [e + ' पर हमने ईमेल भेजा है।']),
+      h('div', 'trust', [
+        h('p', '', ['✅ यह ईमेल हमारा ही है और इसका लिंक दबाना सुरक्षित है।']),
+        h('p', '', ['भेजने वाले का नाम "Supabase Auth" दिख सकता है, यह हमारा ईमेल भेजने वाला साथी है। विषय: "Confirm your email address" या "Magic Link"।']),
+        h('p', '', ['मंडी एक्स्ट्रा कभी आपसे पासवर्ड, ओटीपी या पैसे नहीं माँगता।'])
+      ]),
+      mailLink('Gmail खोलें', 'https://mail.google.com/mail/u/0/#search/mail.app.supabase.io'),
       mailLink('Outlook खोलें', 'https://outlook.live.com/mail/'),
       mailLink('Yahoo मेल खोलें', 'https://mail.yahoo.com/'),
-      h('p', 'fine', ['कोड वाला ईमेल आए तो कोड यहाँ डालिए:']), code, ok, msg
+      h('p', 'fine', ['ईमेल न दिखे तो स्पैम या प्रमोशन फ़ोल्डर देखिए। अगर उसमें सिर्फ़ कोड आए तो कोड यहाँ डालिए:']), code, ok, msg
     ]);
   }
 

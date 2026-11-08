@@ -31,3 +31,5 @@ a.btn{text-decoration:none}
 @keyframes fade{from{opacity:0}to{opacity:1}}
 @keyframes up{from{transform:translateY(40px);opacity:0}to{transform:none;opacity:1}}
 @media (prefers-reduced-motion:reduce){.scrim,.sheet{animation:none}}
+.trust{background:#E8F7F0;border:1px solid #BFE6D6;border-radius:14px;padding:10px 12px;margin:10px 0}
+.trust p{font-size:13.5px;line-height:1.5;color:#064E3B;margin:4px 0}
