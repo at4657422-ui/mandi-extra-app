@@ -70,3 +70,8 @@ a.btn{text-decoration:none}
 .tab.plus .ti{background:linear-gradient(135deg,#0E9F6E,#087A54);color:#fff;width:46px;height:46px;border-radius:50%;display:flex;align-items:center;justify-content:center;margin-top:-22px;box-shadow:0 6px 14px rgba(14,159,110,.4);font-size:30px;font-weight:700;line-height:1}
 @keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
 @media (prefers-reduced-motion:reduce){.track{transition:none}.bicon,.emo,.eicon{animation:none}}
+
+.btn.google.big{height:58px;font-size:18px;border:2px solid var(--em);box-shadow:0 6px 16px rgba(14,159,110,.22);gap:12px}
+.gmark{font-weight:900;font-size:24px;background:linear-gradient(90deg,#4285F4 0 30%,#EA4335 30% 55%,#FBBC05 55% 78%,#34A853 78%);-webkit-background-clip:text;background-clip:text;color:transparent;-webkit-text-fill-color:transparent}
+
+.gt{font-size:15px;color:var(--navy);margin:16px 2px 8px}

@@ -68,9 +68,9 @@
     var msg = msgBox();
     show([h('main', 'wrap', [
       brand(), h('h1', '', ['नमस्ते! अपना बाज़ार शुरू कीजिए']),
-      h('p', '', ['नीचे से एक तरीक़ा चुनिए।']),
-      btn('ईमेल से जारी रखें', '', function () { askConsent(emailSheet); }),
-      btn('Google से जारी रखें', 'google', function () { askConsent(async function () { msg.textContent = 'Google खुल रहा है…'; try { await A.googleStart(); } catch (e) { msg.textContent = e.message; } }); }),
+            (function () { var g = btn('', 'google big', function () { askConsent(async function () { msg.textContent = 'Google खुल रहा है…'; try { await A.googleStart(); } catch (e) { msg.textContent = e.message; } }); }); g.appendChild(h('span', 'gmark', ['G'])); g.appendChild(document.createTextNode('Google से जारी रखें')); return g; })(),
+      h('p', 'fine', ['सबसे आसान: एक टैप, कोई कोड या लिंक नहीं।']),
+      btn('ईमेल से जारी रखें', 'ghost', function () { askConsent(emailSheet); }),
       btn('ईमेल और पासवर्ड से', 'link', function () { askConsent(function () { passwordSheet(false); }); }),
       msg,
       h('p', 'fine', ['आगे बढ़ने पर आपसे सहमति ली जाएगी। पहले से कोई सहमति नहीं मानी जाती।'])

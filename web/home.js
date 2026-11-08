@@ -12,17 +12,25 @@
     { cls: 'b3', icon: '🏪', title: 'अपनी दुकान, अपना ब्रांड', sub: 'पहले विक्रेता बनिए और अपना बाज़ार सजाइए' }
   ];
   // श्रेणियाँ (PRD के अनुसार)
-  var CATS = [
-    ['🧱', 'निर्माण', 'k1'], ['🌾', 'अनाज-मंडी', 'k2'], ['🛒', 'किराना', 'k3'], ['📱', 'इलेक्ट्रॉनिक्स', 'k4'],
-    ['🛋️', 'फ़र्नीचर', 'k5'], ['👕', 'फ़ैशन', 'k6'], ['📚', 'किताबें', 'k7'], ['🏗️', 'स्टील-कंटेनर', 'k8'],
-    ['🚗', 'गाड़ियाँ', 'k9'], ['🐄', 'पशु', 'k10'], ['🌱', 'ज़मीन-प्रॉपर्टी', 'k11'], ['🔧', 'कारीगर-सेवा', 'k12'],
-    ['🍽️', 'रेस्टोरेंट', 'k13'], ['🏨', 'होटल-हॉल', 'k14'], ['🚚', 'ट्रक-किराया', 'k15'], ['🎬', 'क्रिएटर', 'k16']
+  var GROUPS = [
+    ['घर और निर्माण', [['🧱','ईंट-सीमेंट'],['🪵','लकड़ी-प्लाईवुड'],['🚰','प्लंबिंग'],['💡','बिजली का सामान'],['🎨','पेंट-हार्डवेयर'],['🏗️','स्टील-कंटेनर'],['🪟','टाइल्स-खिड़की']]],
+    ['खेती और मंडी', [['🌾','अनाज-मंडी'],['🥬','सब्ज़ी-फल'],['🌱','बीज-खाद'],['🚜','खेती के औज़ार'],['🥛','दूध-डेयरी'],['🍯','मसाले-शहद'],['🐄','पशु'],['🐔','मुर्गी-मछली']]],
+    ['रोज़ का सामान', [['🛒','किराना'],['🥫','पैक्ड फ़ूड'],['🧴','घरेलू सामान'],['🧸','खिलौने'],['✏️','स्टेशनरी'],['📚','किताबें'],['🎒','स्कूल का सामान']]],
+    ['फ़ैशन और घर सजावट', [['👕','फ़ैशन'],['👗','साड़ी-कपड़ा'],['👟','जूते-चप्पल'],['👜','बैग'],['💍','गहने'],['🛋️','फ़र्नीचर'],['🛏️','बिस्तर-परदे'],['🪔','पूजा-सजावट']]],
+    ['इलेक्ट्रॉनिक्स', [['📱','मोबाइल'],['💻','कंप्यूटर'],['📺','टीवी-फ़्रिज'],['🔌','सोलर-बैटरी'],['🎧','ऑडियो-कैमरा'],['🛠️','पुर्ज़े-रिपेयर']]],
+    ['गाड़ियाँ और ढुलाई', [['🚗','कार'],['🏍️','बाइक-स्कूटर'],['🚚','ट्रक-किराया'],['🛺','ऑटो-ई-रिक्शा'],['🚜','ट्रैक्टर'],['⚙️','गाड़ी के पुर्ज़े']]],
+    ['ज़मीन और प्रॉपर्टी', [['🌱','ज़मीन-खेत'],['🏠','मकान-दुकान'],['🔑','किराए पर कमरा'],['🏢','गोदाम-ऑफ़िस']]],
+    ['कारीगर और सेवाएँ', [['🔧','कारीगर-सेवा'],['👷','मज़दूर-मिस्त्री'],['⚡','इलेक्ट्रीशियन'],['🪚','बढ़ई-लोहार'],['🧵','दर्ज़ी-बुनकर'],['🧹','सफ़ाई-देखभाल'],['🎓','ट्यूशन-कोर्स'],['🩺','सेहत-सेवाएँ']]],
+    ['खाना और ठहरना', [['🍽️','रेस्टोरेंट'],['🍰','मिठाई-बेकरी'],['🏨','होटल-हॉल'],['🎉','शादी-इवेंट'],['🏕️','घूमना-टूर']]],
+    ['क्रिएटर और ब्रांड', [['🎬','क्रिएटर'],['🏷️','ब्रांड शोकेस'],['🏭','कंपनी-थोक']]]
   ];
+  var CATS = [], CI = 0;
+  GROUPS.forEach(function (g) { g[1].forEach(function (c) { CATS.push([c[0], c[1], 'k' + (CI++ % 16 + 1), g[0]]); }); });
 
-  async function loadBanners() {
+  async function loadBanners(place) {
     try {
       var now = new Date().toISOString();
-      var r = await fetch(C.SUPABASE_URL + '/rest/v1/banners?select=image_path,link_url,is_sponsored&placement=eq.home&order=created_at.desc&limit=8', { headers: { apikey: C.SUPABASE_KEY } });
+      var r = await fetch(C.SUPABASE_URL + '/rest/v1/banners?select=image_path,link_url,is_sponsored&placement=eq.' + encodeURIComponent(place || 'home') + '&order=created_at.desc&limit=8', { headers: { apikey: C.SUPABASE_KEY } });
       if (!r.ok) return [];
       var rows = await r.json();
       return Array.isArray(rows) ? rows : [];
@@ -30,11 +38,11 @@
   }
   function safeHref(u) { return typeof u === 'string' && /^(https:\/\/|\/)/.test(u) ? u : null; }
 
-  function carousel(dbBanners) {
+  function carousel(dbBanners, defaults) {
     var slides = [], dots = [];
     var wrap = h('div', 'carousel'); wrap.setAttribute('role', 'region'); wrap.setAttribute('aria-label', 'ख़ास जानकारी');
     var track = h('div', 'track'); wrap.appendChild(track);
-    var items = dbBanners.length ? dbBanners.map(function (b) { return { db: b }; }) : DEFAULT_BANNERS;
+    var items = dbBanners.length ? dbBanners.map(function (b) { return { db: b }; }) : (defaults || DEFAULT_BANNERS);
     items.forEach(function (it, i) {
       var s;
       if (it.db) {
@@ -98,21 +106,26 @@
       body.appendChild(h('header', 'top', [txt('div', 'hi', 'नमस्ते 👋'), txt('h1', '', 'आज क्या चाहिए?'), search]));
       var slot = h('div', 'bslot'); body.appendChild(slot);
       loadBanners().then(function (rows) { if (!slot.isConnected) return; banner = carousel(rows); slot.appendChild(banner); });
-      body.appendChild(txt('h2', 'sec', 'श्रेणियाँ'));
-      var grid = h('div', 'grid');
-      CATS.forEach(function (c, i) {
-        var t = h('button', 'tile ' + c[2]); t.type = 'button'; t.style.setProperty('--d', (i % 4) * 0.35 + 's');
-        t.appendChild(txt('span', 'emo', c[0])); t.appendChild(txt('span', 'lbl', c[1]));
-        t.addEventListener('click', function () { setTab('cat', c); });
-        grid.appendChild(t);
+      body.appendChild(txt('h2', 'sec', 'सारी श्रेणियाँ (' + CATS.length + ')'));
+      GROUPS.forEach(function (g) {
+        body.appendChild(txt('h3', 'gt', g[0]));
+        var grid = h('div', 'grid');
+        CATS.filter(function (c) { return c[3] === g[0]; }).forEach(function (c, i) {
+          var t = h('button', 'tile ' + c[2]); t.type = 'button'; t.style.setProperty('--d', (i % 4) * 0.35 + 's');
+          t.appendChild(txt('span', 'emo', c[0])); t.appendChild(txt('span', 'lbl', c[1]));
+          t.addEventListener('click', function () { setTab('cat', c); });
+          grid.appendChild(t);
+        });
+        body.appendChild(grid);
       });
-      body.appendChild(grid);
       body.appendChild(listenCard('v17_sab_kuchh_yahan.mp3', 'मंडी एक्स्ट्रा पर क्या-क्या हो सकता है', 'आवाज़ में सुनिए (1 मिनट)'));
     }
     function catTab(c) {
       var back = h('button', 'back', ['← वापस']); back.type = 'button'; back.addEventListener('click', function () { setTab('home'); });
       body.appendChild(back);
-      body.appendChild(h('div', 'cathead ' + c[2], [txt('span', 'emo big', c[0]), txt('h1', '', c[1])]));
+      body.appendChild(h('div', 'cathead ' + c[2], [txt('span', 'emo big', c[0]), h('div', '', [txt('h1', '', c[1]), txt('div', 'fine', c[3])])]));
+      var cslot = h('div', 'bslot'); body.appendChild(cslot);
+      loadBanners('category:' + c[1]).then(function (rows) { if (!cslot.isConnected) return; banner = carousel(rows, [{ cls: 'b' + (CATS.indexOf(c) % 3 + 1), icon: c[0], title: c[1] + ' में पहले बेचिए', sub: 'आपका सामान इस श्रेणी में सबसे पहले दिखेगा' }]); cslot.appendChild(banner); });
       var sell = h('button', 'btn', ['इस श्रेणी में बेचिए']); sell.type = 'button'; sell.addEventListener('click', function () { setTab('sell'); });
       body.appendChild(emptyState('🌟', 'यहाँ अभी कोई सामान नहीं है', 'आप पहले विक्रेता बन सकते हैं। आपका सामान सबसे पहले दिखेगा।', [sell]));
       if (c[1] === 'निर्माण' || c[1] === 'अनाज-मंडी') body.appendChild(listenCard('v04_shreniyan.mp3', 'श्रेणियों के बारे में सुनिए', 'क्या-क्या बेच सकते हैं'));
