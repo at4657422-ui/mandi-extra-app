@@ -35,6 +35,15 @@
       try { sessionStorage.setItem('mx.pkce', v); } catch (e) { throw new Error('ब्राउज़र में प्राइवेट मोड बंद करके कोशिश कीजिए।'); }
       location.href = C.SUPABASE_URL + '/auth/v1/authorize?provider=google&code_challenge=' + ch + '&code_challenge_method=s256&redirect_to=' + encodeURIComponent(location.origin + '/');
     },
+    // ईमेल का लिंक दबाकर लौटने पर: टोकन URL के #भाग में आते हैं
+    linkFinish: function () {
+      var h = location.hash; if (h.indexOf('access_token=') < 0) return null;
+      var q = new URLSearchParams(h.replace(/^#/, '')), at = q.get('access_token'), rt = q.get('refresh_token');
+      history.replaceState(null, '', '/');
+      if (!at || !rt || !/^[\w.-]+$/.test(at) || !/^[\w.-]+$/.test(rt)) throw new Error('लिंक ठीक नहीं है। नया लिंक मँगवाइए।');
+      var s = { access_token: at, refresh_token: rt, expires_at: Date.now() + (parseInt(q.get('expires_in'), 10) || 3600) * 1000, email: '' };
+      save(s); return s;
+    },
     googleFinish: async function () {
       var q = new URLSearchParams(location.search), code = q.get('code'), err = q.get('error_description') || q.get('error');
       if (!code && !err) return null;

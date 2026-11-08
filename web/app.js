@@ -45,13 +45,14 @@
       try {
         pending.email = email.value.trim().toLowerCase();
         pending.consent = { privacy: true, age: true, marketing: c3.input.checked };
+        try { sessionStorage.setItem('mx.pc', JSON.stringify(pending.consent)); } catch (e) {}   // लिंक से लौटने पर सहमति दर्ज होगी
         await A.sendCode(pending.email);
         enterCode();
       } catch (e) { msg.textContent = e.message; btn.disabled = false; }
     });
     show([h('main', 'wrap', [
       brand(), h('h1', '', ['नमस्ते! अपना बाज़ार शुरू कीजिए']),
-      h('p', '', ['ईमेल पर आए कोड से साइन-इन कीजिए। पासवर्ड की ज़रूरत नहीं।']),
+      h('p', '', ['Google से या ईमेल से साइन-इन कीजिए। पासवर्ड की ज़रूरत नहीं।']),
       h('div', 'card', [c1.box, c2.box, c3.box,
         h('p', 'fine', ['पहले से कोई टिक नहीं लगा है। सहमति आप कभी भी वापस ले सकते हैं, और माँगने पर आपका डेटा मिटा दिया जाएगा।'])]),
       h('div', 'card', [email]),
@@ -81,7 +82,7 @@
     });
     show([h('main', 'wrap', [
       brand(), h('h1', '', ['कोड डालिए']),
-      h('p', '', [pending.email + ' पर भेजा गया कोड यहाँ डालिए। स्पैम फ़ोल्डर भी देख लीजिए।']),
+      h('p', '', [pending.email + ' पर ईमेल भेजा है। उसमें लिंक हो तो उसे दबा दीजिए। कोड हो तो यहाँ डालिए। स्पैम फ़ोल्डर भी देख लीजिए।']),
       h('div', 'card', [code]), btn, msg, back
     ])]);
   }
@@ -106,7 +107,7 @@
   }
 
   async function afterGoogle() {
-    var s = await A.googleFinish();                 // null अगर Google से लौटे नहीं हैं
+    var s = A.linkFinish() || await A.googleFinish();   // null अगर Google/ईमेल-लिंक से लौटे नहीं हैं
     if (!s) return false;
     var c = null; try { c = JSON.parse(sessionStorage.getItem('mx.pc')); sessionStorage.removeItem('mx.pc'); } catch (e) {}
     if (c && c.privacy && c.age) {
