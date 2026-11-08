@@ -1,124 +1,150 @@
 (function () {
   'use strict';
   var root = document.getElementById('app'), C = window.MX_CONFIG, A = window.MXA;
-  var pending = { email: '', consent: null };   // सहमति पहले मेमोरी में, लॉगिन के बाद रिकॉर्ड में
+  var EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 
   function h(tag, cls, kids) {
     var e = document.createElement(tag); if (cls) e.className = cls;
     (kids || []).forEach(function (k) { e.appendChild(typeof k === 'string' ? document.createTextNode(k) : k); });
     return e;
   }
-  function show(nodes) { root.replaceChildren.apply(root, nodes); window.scrollTo(0, 0); }
-  function brand() {
-    var img = h('img', 'logo'); img.src = '/icons/logo.jpg'; img.alt = 'मंडी एक्स्ट्रा'; return img;
-  }
+  function btn(label, cls, fn) { var b = h('button', 'btn ' + (cls || ''), [label]); b.type = 'button'; if (fn) b.addEventListener('click', fn); return b; }
+  function show(nodes) { closeSheet(); root.replaceChildren.apply(root, nodes); window.scrollTo(0, 0); }
+  function brand() { var i = h('img', 'logo'); i.src = '/icons/logo.jpg'; i.alt = 'मंडी एक्स्ट्रा'; return i; }
   function msgBox() { var m = h('p', 'msg'); m.setAttribute('role', 'alert'); return m; }
-  function checkbox(id, label, required) {
-    var i = h('input'); i.type = 'checkbox'; i.id = id; i.checked = false;      // कभी पहले से टिक नहीं
-    var l = h('label', 'cb', [i, h('span', '', [label + (required ? '' : ' (वैकल्पिक)')])]); l.htmlFor = id;
-    return { box: l, input: i };
+  function field(type, ph, extra) { var i = h('input', 'field'); i.type = type; i.placeholder = ph; i.maxLength = 120; Object.assign(i, extra || {}); return i; }
+
+  // ---- नीचे से उठने वाला पॉपअप ----
+  var sheetEl = null;
+  function closeSheet() { if (sheetEl) { sheetEl.remove(); sheetEl = null; document.body.classList.remove('lock'); } }
+  function openSheet(title, kids) {
+    closeSheet();
+    var back = h('div', 'scrim'), card = h('div', 'sheet', [h('h2', '', [title])].concat(kids));
+    card.setAttribute('role', 'dialog'); card.setAttribute('aria-modal', 'true'); card.setAttribute('aria-label', title);
+    back.appendChild(card); back.addEventListener('click', function (e) { if (e.target === back) closeSheet(); });
+    document.body.appendChild(back); document.body.classList.add('lock'); sheetEl = back;
+    return card;
   }
 
+  // ---- सहमति: एक साफ़ क्रिया "सहमत हूँ, आगे बढ़ें" (पहले से कोई टिक नहीं; समय-मुहर के साथ दर्ज) ----
+  function askConsent(next) {
+    var mkt = h('input'); mkt.type = 'checkbox'; mkt.id = 'c-mkt'; mkt.checked = false;
+    var mk = h('label', 'cb', [mkt, h('span', '', ['मुझे ऑफ़र और ख़बरें भेजी जाएँ (वैकल्पिक)'])]); mk.htmlFor = 'c-mkt';
+    openSheet('आगे बढ़ने से पहले', [
+      h('p', 'lead', ['मैं पुष्टि करता/करती हूँ कि मेरी उम्र 18 साल या उससे ज़्यादा है, और मैंने प्राइवेसी नोटिस पढ़कर उससे सहमति दी है।']),
+      h('p', 'fine', ['हम सिर्फ़ ज़रूरी जानकारी लेते हैं, जो भारत में सुरक्षित रहती है। सहमति आप कभी भी सेटिंग से वापस ले सकते हैं, और माँगने पर आपका डेटा मिटा दिया जाएगा।']),
+      mk,
+      btn('सहमत हूँ, आगे बढ़ें', '', function () {
+        var c = { privacy: true, age: true, marketing: mkt.checked };
+        try { sessionStorage.setItem('mx.pc', JSON.stringify(c)); } catch (e) {}
+        closeSheet(); next(c);
+      }),
+      btn('रद्द करें', 'ghost', closeSheet)
+    ]);
+  }
+  async function recordConsent(c) {
+    if (!c || !c.privacy || !c.age) return;
+    await A.rpc('record_consent', { p_purpose: 'privacy_notice', p_granted: true, p_version: C.NOTICE_VERSION });
+    await A.rpc('record_consent', { p_purpose: 'age_18plus', p_granted: true, p_version: C.NOTICE_VERSION });
+    if (c.marketing) await A.rpc('record_consent', { p_purpose: 'marketing', p_granted: true, p_version: C.NOTICE_VERSION });
+  }
+  function savedConsent() { try { var c = JSON.parse(sessionStorage.getItem('mx.pc')); sessionStorage.removeItem('mx.pc'); return c; } catch (e) { return null; } }
+
+  // ---- मुख्य साइन-इन पन्ना ----
   function signIn() {
-    var email = h('input', 'field'); email.type = 'email'; email.placeholder = 'आपका ईमेल'; email.autocomplete = 'email'; email.inputMode = 'email'; email.maxLength = 120;
-    var c1 = checkbox('c-privacy', 'मैंने प्राइवेसी नोटिस पढ़ लिया है और मैं सहमत हूँ', true);
-    var c2 = checkbox('c-age', 'मेरी उम्र 18 साल या उससे ज़्यादा है', true);
-    var c3 = checkbox('c-mkt', 'मुझे ऑफ़र और ख़बरें भेजी जाएँ', false);
-    var btn = h('button', 'btn', ['कोड भेजें']); btn.type = 'button'; btn.disabled = true;
-    var gbtn = h('button', 'btn google', ['Google से जारी रखें']); gbtn.type = 'button'; gbtn.disabled = true;
     var msg = msgBox();
-    function consentOk() { return c1.input.checked && c2.input.checked; }
-    function ok() { return consentOk() && /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email.value.trim()); }
-    function refresh() { btn.disabled = !ok(); gbtn.disabled = !consentOk(); }
-    gbtn.addEventListener('click', async function () {
-      if (!consentOk()) return;
-      gbtn.disabled = true; msg.textContent = 'Google खुल रहा है…';
-      try {
-        sessionStorage.setItem('mx.pc', JSON.stringify({ privacy: true, age: true, marketing: c3.input.checked }));
-        await A.googleStart();
-      } catch (e) { msg.textContent = e.message; gbtn.disabled = false; }
-    });
-    [c1.input, c2.input, email].forEach(function (x) { x.addEventListener('input', refresh); x.addEventListener('change', refresh); });
-    btn.addEventListener('click', async function () {
-      if (!ok()) return;
-      btn.disabled = true; msg.textContent = 'कोड भेज रहे हैं…';
-      try {
-        pending.email = email.value.trim().toLowerCase();
-        pending.consent = { privacy: true, age: true, marketing: c3.input.checked };
-        try { sessionStorage.setItem('mx.pc', JSON.stringify(pending.consent)); } catch (e) {}   // लिंक से लौटने पर सहमति दर्ज होगी
-        await A.sendCode(pending.email);
-        enterCode();
-      } catch (e) { msg.textContent = e.message; btn.disabled = false; }
-    });
     show([h('main', 'wrap', [
       brand(), h('h1', '', ['नमस्ते! अपना बाज़ार शुरू कीजिए']),
-      h('p', '', ['Google से या ईमेल से साइन-इन कीजिए। पासवर्ड की ज़रूरत नहीं।']),
-      h('div', 'card', [c1.box, c2.box, c3.box,
-        h('p', 'fine', ['पहले से कोई टिक नहीं लगा है। सहमति आप कभी भी वापस ले सकते हैं, और माँगने पर आपका डेटा मिटा दिया जाएगा।'])]),
-      h('div', 'card', [email]),
-      btn, h('p', 'or', ['या']), gbtn, msg,
-      h('p', 'fine', ['हम सिर्फ़ वही जानकारी लेते हैं जो ज़रूरी है। आपका डेटा भारत में सुरक्षित रहता है।'])
+      h('p', '', ['नीचे से एक तरीक़ा चुनिए।']),
+      btn('ईमेल से जारी रखें', '', function () { askConsent(emailSheet); }),
+      btn('Google से जारी रखें', 'google', function () { askConsent(async function () { msg.textContent = 'Google खुल रहा है…'; try { await A.googleStart(); } catch (e) { msg.textContent = e.message; } }); }),
+      btn('ईमेल और पासवर्ड से', 'link', function () { askConsent(function () { passwordSheet(false); }); }),
+      msg,
+      h('p', 'fine', ['आगे बढ़ने पर आपसे सहमति ली जाएगी। पहले से कोई सहमति नहीं मानी जाती।'])
     ])]);
   }
 
-  function enterCode() {
-    var code = h('input', 'field code'); code.inputMode = 'numeric'; code.autocomplete = 'one-time-code'; code.maxLength = 8; code.placeholder = '• • • • • •';
-    var btn = h('button', 'btn', ['साइन-इन करें']); btn.type = 'button'; btn.disabled = true;
-    var back = h('button', 'link', ['ईमेल बदलें']); back.type = 'button';
-    var msg = msgBox();
-    code.addEventListener('input', function () { code.value = code.value.replace(/\D/g, ''); btn.disabled = code.value.length < 6; });
-    back.addEventListener('click', signIn);
-    btn.addEventListener('click', async function () {
-      btn.disabled = true; msg.textContent = 'जाँच रहे हैं…';
-      try {
-        await A.verifyCode(pending.email, code.value);
-        var c = pending.consent || {};
-        await A.rpc('record_consent', { p_purpose: 'privacy_notice', p_granted: !!c.privacy, p_version: C.NOTICE_VERSION });
-        await A.rpc('record_consent', { p_purpose: 'age_18plus', p_granted: !!c.age, p_version: C.NOTICE_VERSION });
-        if (c.marketing) await A.rpc('record_consent', { p_purpose: 'marketing', p_granted: true, p_version: C.NOTICE_VERSION });
-        pending = { email: '', consent: null };
-        home();
-      } catch (e) { msg.textContent = e.message; btn.disabled = code.value.length < 6; }
+  // ---- ईमेल से: पता डालो -> मेल ऐप खोलो ----
+  function emailSheet(consent) {
+    var email = field('email', 'आपका ईमेल', { autocomplete: 'email', inputMode: 'email' });
+    var go = btn('लिंक/कोड भेजें', '', null); go.disabled = true; var msg = msgBox();
+    email.addEventListener('input', function () { go.disabled = !EMAIL_RE.test(email.value.trim()); });
+    go.addEventListener('click', async function () {
+      var e = email.value.trim().toLowerCase(); go.disabled = true; msg.textContent = 'भेज रहे हैं…';
+      try { await A.sendCode(e); sentSheet(e); } catch (er) { msg.textContent = er.message; go.disabled = false; }
     });
-    show([h('main', 'wrap', [
-      brand(), h('h1', '', ['कोड डालिए']),
-      h('p', '', [pending.email + ' पर ईमेल भेजा है। उसमें लिंक हो तो उसे दबा दीजिए। कोड हो तो यहाँ डालिए। स्पैम फ़ोल्डर भी देख लीजिए।']),
-      h('div', 'card', [code]), btn, msg, back
-    ])]);
+    openSheet('अपना ईमेल डालिए', [email, go, msg]);
+  }
+  function mailLink(label, url) { var a = h('a', 'btn ghost', [label]); a.href = url; a.target = '_blank'; a.rel = 'noopener noreferrer'; return a; }
+  function sentSheet(e) {
+    var code = field('text', 'ईमेल में कोड हो तो यहाँ डालिए', { inputMode: 'numeric', autocomplete: 'one-time-code', maxLength: 8 }); code.classList.add('code');
+    var ok = btn('कोड से साइन-इन', '', null); ok.disabled = true; var msg = msgBox();
+    code.addEventListener('input', function () { code.value = code.value.replace(/\D/g, ''); ok.disabled = code.value.length < 6; });
+    ok.addEventListener('click', async function () {
+      ok.disabled = true; msg.textContent = 'जाँच रहे हैं…';
+      try { await A.verifyCode(e, code.value); await recordConsent(savedConsent()); home(); } catch (er) { msg.textContent = er.message; ok.disabled = false; }
+    });
+    openSheet('अपना ईमेल खोलिए', [
+      h('p', 'lead', [e + ' पर ईमेल भेजा गया है। उसे खोलकर लिंक दबाइए। स्पैम फ़ोल्डर भी देख लीजिए।']),
+      mailLink('Gmail खोलें', 'https://mail.google.com/'),
+      mailLink('Outlook खोलें', 'https://outlook.live.com/mail/'),
+      mailLink('Yahoo मेल खोलें', 'https://mail.yahoo.com/'),
+      h('p', 'fine', ['कोड वाला ईमेल आए तो कोड यहाँ डालिए:']), code, ok, msg
+    ]);
   }
 
+  // ---- ईमेल + पासवर्ड ----
+  function strongEnough(pw, em) {
+    if (pw.length < 10) return 'पासवर्ड कम से कम 10 अक्षर का रखिए।';
+    if (/^\d+$/.test(pw)) return 'पासवर्ड में सिर्फ़ अंक नहीं हो सकते।';
+    if (em && pw.toLowerCase().indexOf(em.split('@')[0].toLowerCase()) >= 0 && em.split('@')[0].length > 3) return 'पासवर्ड में अपना ईमेल का नाम मत रखिए।';
+    if (/^(.)\1+$/.test(pw) || /password|12345|qwerty/i.test(pw)) return 'यह पासवर्ड बहुत आसान है। कुछ और रखिए।';
+    return '';
+  }
+  function passwordSheet(isNew) {
+    var email = field('email', 'आपका ईमेल', { autocomplete: 'email', inputMode: 'email' });
+    var pw = field('password', isNew ? 'नया पासवर्ड (कम से कम 10 अक्षर)' : 'पासवर्ड', { autocomplete: isNew ? 'new-password' : 'current-password', maxLength: 72 });
+    var go = btn(isNew ? 'खाता बनाइए' : 'साइन-इन', '', null); var msg = msgBox();
+    var sw = btn(isNew ? 'पहले से खाता है? साइन-इन' : 'नया खाता बनाइए', 'link', function () { passwordSheet(!isNew); });
+    go.addEventListener('click', async function () {
+      var e = email.value.trim().toLowerCase();
+      if (!EMAIL_RE.test(e)) { msg.textContent = 'सही ईमेल डालिए।'; return; }
+      if (isNew) { var w = strongEnough(pw.value, e); if (w) { msg.textContent = w; return; } }
+      go.disabled = true; msg.textContent = 'जाँच रहे हैं…';
+      try {
+        var s = isNew ? await A.passwordSignUp(e, pw.value) : await A.passwordSignIn(e, pw.value);
+        if (!s) { closeSheet(); sentSheet(e); return; }       // पुष्टि का लिंक भेजा गया
+        await recordConsent(savedConsent()); home();
+      } catch (er) { msg.textContent = er.message; go.disabled = false; }
+    });
+    openSheet(isNew ? 'नया खाता' : 'ईमेल और पासवर्ड', [email, pw, go, msg, sw]);
+  }
+
+  // ---- साइन-इन के बाद ----
   async function home() {
     var s = await A.session(); if (!s) return signIn();
-    var out = h('button', 'btn ghost', ['साइन-आउट']); out.type = 'button';
-    var del = h('button', 'btn danger', ['मेरा डेटा मिटाने का अनुरोध']); del.type = 'button';
     var msg = msgBox();
-    out.addEventListener('click', async function () { await A.signOut(); signIn(); });
-    del.addEventListener('click', async function () {
+    var out = btn('साइन-आउट', 'ghost', async function () { await A.signOut(); signIn(); });
+    var del = btn('मेरा डेटा मिटाने का अनुरोध', 'danger', async function () {
       if (!window.confirm('आपका खाता और डेटा 48 घंटे बाद हमेशा के लिए मिटा दिया जाएगा। आगे बढ़ें?')) return;
       try { var t = await A.rpc('request_deletion'); msg.textContent = 'अनुरोध दर्ज हुआ। मिटाने का समय: ' + new Date(t).toLocaleString('hi-IN') + '। तब तक आप इसे रद्द कर सकते हैं।'; }
       catch (e) { msg.textContent = e.message; }
     });
     show([h('main', 'wrap', [
-      brand(), h('h1', '', ['स्वागत है!']),
-      h('p', '', [(s.email || '') + ' से साइन-इन हो गया।']),
+      brand(), h('h1', '', ['स्वागत है!']), h('p', '', [(s.email || '') + ' से साइन-इन हो गया।']),
       h('div', 'card', [h('p', '', ['आपका बाज़ार जल्द खुल रहा है: सामान, सौदे और दुकान अगले चरणों में जुड़ेंगे।'])]),
       out, del, msg
     ])]);
   }
 
-  async function afterGoogle() {
-    var s = A.linkFinish() || await A.googleFinish();   // null अगर Google/ईमेल-लिंक से लौटे नहीं हैं
+  async function afterRedirect() {
+    var s = A.linkFinish() || await A.googleFinish();     // Google या ईमेल-लिंक से लौटे?
     if (!s) return false;
-    var c = null; try { c = JSON.parse(sessionStorage.getItem('mx.pc')); sessionStorage.removeItem('mx.pc'); } catch (e) {}
-    if (c && c.privacy && c.age) {
-      await A.rpc('record_consent', { p_purpose: 'privacy_notice', p_granted: true, p_version: C.NOTICE_VERSION });
-      await A.rpc('record_consent', { p_purpose: 'age_18plus', p_granted: true, p_version: C.NOTICE_VERSION });
-      if (c.marketing) await A.rpc('record_consent', { p_purpose: 'marketing', p_granted: true, p_version: C.NOTICE_VERSION });
-    }
+    await recordConsent(savedConsent());
     return true;
   }
 
   if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(function () {});
-  afterGoogle().then(function (done) { return done ? home() : A.session().then(function (s) { return s ? home() : signIn(); }); })
+  afterRedirect().then(function (d) { return d ? home() : A.session().then(function (s) { return s ? home() : signIn(); }); })
     .catch(function (e) { signIn(); var m = document.querySelector('.msg'); if (m) m.textContent = e.message; });
 })();

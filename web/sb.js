@@ -17,6 +17,9 @@
     if (!r.ok) {
       var m = (j && (j.msg || j.message || j.error_description)) || '';
       if (r.status === 429 || /rate limit/i.test(m)) throw new Error('बहुत जल्दी-जल्दी कोशिश हो गई। थोड़ी देर रुककर फिर कीजिए।');
+      if (/invalid login|invalid credentials/i.test(m)) throw new Error('ईमेल या पासवर्ड ग़लत है।');
+      if (/already registered|already been/i.test(m)) throw new Error('इस ईमेल से खाता पहले से है। साइन-इन कीजिए।');
+      if (/password/i.test(m)) throw new Error('पासवर्ड कमज़ोर है। लंबा और अलग रखिए।');
       if (/expired|invalid/i.test(m)) throw new Error('कोड ग़लत है या पुराना हो गया। नया कोड मँगवाइए।');
       throw new Error('कुछ गड़बड़ हुई। दोबारा कोशिश कीजिए।');
     }
@@ -52,6 +55,11 @@
       var v = null; try { v = sessionStorage.getItem('mx.pkce'); sessionStorage.removeItem('mx.pkce'); } catch (e) {}
       if (!v) throw new Error('साइन-इन का समय निकल गया। दोबारा कोशिश कीजिए।');
       return keep(await call('/auth/v1/token?grant_type=pkce', { body: { auth_code: code, code_verifier: v } }));
+    },
+    passwordSignIn: async function (email, pw) { return keep(await call('/auth/v1/token?grant_type=password', { body: { email: email, password: pw } })); },
+    passwordSignUp: async function (email, pw) {
+      var j = await call('/auth/v1/signup', { body: { email: email, password: pw } });
+      return j && j.access_token ? keep(j) : null;     // null = ईमेल पुष्टि का लिंक भेजा गया
     },
     sendCode: function (email) { return call('/auth/v1/otp', { body: { email: email, create_user: true } }); },
     verifyCode: async function (email, token) { return keep(await call('/auth/v1/verify', { body: { type: 'email', email: email, token: token } })); },

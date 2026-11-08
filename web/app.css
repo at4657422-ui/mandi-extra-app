@@ -19,3 +19,14 @@ h1{font-size:24px;margin:18px 0 6px;color:var(--navy)}p{color:var(--muted);line-
 .btn.danger{background:#fff;color:#B42318;border:1.5px solid #F4C7C3}
 .btn.google{background:#fff;color:var(--ink);border:1.5px solid var(--line)}
 .or{text-align:center;color:var(--muted);font-size:13px;margin-top:12px}
+body.lock{overflow:hidden}
+.scrim{position:fixed;inset:0;background:rgba(11,31,58,.55);display:flex;align-items:flex-end;justify-content:center;z-index:50;animation:fade .18s ease-out}
+.sheet{width:100%;max-width:480px;max-height:90vh;overflow:auto;background:#fff;border-radius:24px 24px 0 0;padding:20px 20px 28px;animation:up .26s cubic-bezier(.2,.8,.2,1)}
+.sheet h2{font-size:20px;color:var(--navy);margin-bottom:10px}
+.sheet .field{margin-top:10px}
+.sheet .btn{margin-top:10px}
+.lead{color:var(--ink);font-size:15px;line-height:1.55}
+a.btn{text-decoration:none}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+@keyframes up{from{transform:translateY(40px);opacity:0}to{transform:none;opacity:1}}
+@media (prefers-reduced-motion:reduce){.scrim,.sheet{animation:none}}
