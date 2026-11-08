@@ -1,0 +1,9 @@
+:root{--navy:#0B1F3A;--em:#0E9F6E;--warm:#FBF8F2;--ink:#14213D;--muted:#6B7686;--line:#E7E2D6;--orange:#F26B1D}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,"Noto Sans Devanagari",sans-serif;background:var(--warm);color:var(--ink);min-height:100vh}
+.wrap{max-width:480px;margin:0 auto;padding:24px 20px}
+.logo{width:100%;border-radius:20px;background:#04130B}
+h1{font-size:24px;margin:18px 0 6px;color:var(--navy)}p{color:var(--muted);line-height:1.5}
+.card{background:#fff;border:1px solid var(--line);border-radius:16px;padding:14px;margin-top:14px}
+.btn{display:flex;align-items:center;justify-content:center;height:50px;border-radius:15px;font-weight:700;margin-top:12px;border:0;width:100%;font-size:16px;background:var(--em);color:#fff}
+.btn[disabled]{opacity:.5}
