@@ -148,11 +148,7 @@
       try { var t = await A.rpc('request_deletion'); msg.textContent = 'अनुरोध दर्ज हुआ। मिटाने का समय: ' + new Date(t).toLocaleString('hi-IN') + '। तब तक आप इसे रद्द कर सकते हैं।'; }
       catch (e) { msg.textContent = e.message; }
     });
-    show([h('main', 'wrap', [
-      brand(), h('h1', '', ['स्वागत है!']), h('p', '', [(s.email || '') + ' से साइन-इन हो गया।']),
-      h('div', 'card', [h('p', '', ['आपका बाज़ार जल्द खुल रहा है: सामान, सौदे और दुकान अगले चरणों में जुड़ेंगे।'])]),
-      out, del, msg
-    ])]);
+    show(window.MXHome.render({ email: s.email, signOutBtn: out, deleteBtn: del, msg: msg }));
   }
 
   async function afterRedirect() {

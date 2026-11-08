@@ -1,0 +1,20 @@
+const { chromium } = require('playwright');
+(async () => {
+  const b = await chromium.launch(); const ctx = await b.newContext({ viewport:{width:390,height:844}, deviceScaleFactor:2 }); const p = await ctx.newPage(); const errs=[], calls=[];
+  p.on('pageerror', e => errs.push('PAGEERR '+e.message)); p.on('console', m => { if (m.type()==='error') errs.push('CONSOLE '+m.text()); });
+  await ctx.route('https://ohfrmdpggsiytaxxfmmp.supabase.co/**', async r => { calls.push(r.request().url().split('.co')[1].slice(0,60)); await r.fulfill({status:200,contentType:'application/json',headers:{'access-control-allow-origin':'*'},body:'[]'}); });
+  await p.goto('http://localhost:8766/');
+  await p.evaluate(()=>localStorage.setItem('mx.session',JSON.stringify({access_token:'a',refresh_token:'r',expires_at:Date.now()+3600000,email:'ramesh@example.com'})));
+  await p.reload(); await p.waitForSelector('.tile'); await p.waitForSelector('.carousel'); await p.waitForTimeout(900);
+  console.log('tiles:', await p.$$eval('.tile',x=>x.length), 'banners:', await p.$$eval('.slide',x=>x.length));
+  await p.screenshot({path:'/tmp/h1.png'});
+  const t0 = await p.$eval('.track',e=>e.style.transform); await p.waitForTimeout(5000); const t1 = await p.$eval('.track',e=>e.style.transform); console.log('auto-advance:', t0,'->',t1);
+  await p.click('.tile >> nth=8'); await p.waitForSelector('.cathead'); console.log('category page:', await p.textContent('.cathead h1')); await p.screenshot({path:'/tmp/h2.png'});
+  await p.click('.tab[data-tab=rank]'); console.log('rank empty:', (await p.textContent('.empty h2')));
+  await p.click('.tab[data-tab=me]'); console.log('me has signout:', await p.$$eval('.btn',x=>x.map(e=>e.textContent)));
+  await p.click('.tab[data-tab=home]'); await p.waitForSelector('.listen'); 
+  await p.evaluate(()=>{window.__a=[];const A=window.Audio;window.Audio=function(u){window.__a.push(u);return new A(u)}}); await p.click('.listen'); await p.waitForTimeout(400);
+  console.log('audio requested:', await p.evaluate(()=>window.__a));
+  console.log('supabase calls:', calls); console.log('CSP/console errors:', errs.filter(e=>!/ERR_|Failed to load resource|NotSupported|play\(\)/.test(e)));
+  await b.close();
+})();
