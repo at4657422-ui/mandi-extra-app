@@ -26,7 +26,24 @@
     var s = { access_token: j.access_token, refresh_token: j.refresh_token, expires_at: Date.now() + (j.expires_in || 3600) * 1000, email: j.user && j.user.email };
     save(s); return s;
   }
+  function b64url(buf) { var s = ''; new Uint8Array(buf).forEach(function (b) { s += String.fromCharCode(b); }); return btoa(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); }
+  function rnd() { var a = new Uint8Array(48); crypto.getRandomValues(a); return b64url(a); }
   window.MXA = {
+    // Google से साइन-इन (PKCE: चुराया हुआ कोड अकेले बेकार रहता है)
+    googleStart: async function () {
+      var v = rnd(), ch = b64url(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(v)));
+      try { sessionStorage.setItem('mx.pkce', v); } catch (e) { throw new Error('ब्राउज़र में प्राइवेट मोड बंद करके कोशिश कीजिए।'); }
+      location.href = C.SUPABASE_URL + '/auth/v1/authorize?provider=google&code_challenge=' + ch + '&code_challenge_method=s256&redirect_to=' + encodeURIComponent(location.origin + '/');
+    },
+    googleFinish: async function () {
+      var q = new URLSearchParams(location.search), code = q.get('code'), err = q.get('error_description') || q.get('error');
+      if (!code && !err) return null;
+      history.replaceState(null, '', '/');
+      if (err) throw new Error('Google से साइन-इन पूरा नहीं हुआ। दोबारा कोशिश कीजिए।');
+      var v = null; try { v = sessionStorage.getItem('mx.pkce'); sessionStorage.removeItem('mx.pkce'); } catch (e) {}
+      if (!v) throw new Error('साइन-इन का समय निकल गया। दोबारा कोशिश कीजिए।');
+      return keep(await call('/auth/v1/token?grant_type=pkce', { body: { auth_code: code, code_verifier: v } }));
+    },
     sendCode: function (email) { return call('/auth/v1/otp', { body: { email: email, create_user: true } }); },
     verifyCode: async function (email, token) { return keep(await call('/auth/v1/verify', { body: { type: 'email', email: email, token: token } })); },
     session: async function () {

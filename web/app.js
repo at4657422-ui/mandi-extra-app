@@ -25,9 +25,19 @@
     var c2 = checkbox('c-age', 'मेरी उम्र 18 साल या उससे ज़्यादा है', true);
     var c3 = checkbox('c-mkt', 'मुझे ऑफ़र और ख़बरें भेजी जाएँ', false);
     var btn = h('button', 'btn', ['कोड भेजें']); btn.type = 'button'; btn.disabled = true;
+    var gbtn = h('button', 'btn google', ['Google से जारी रखें']); gbtn.type = 'button'; gbtn.disabled = true;
     var msg = msgBox();
-    function ok() { return c1.input.checked && c2.input.checked && /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email.value.trim()); }
-    function refresh() { btn.disabled = !ok(); }
+    function consentOk() { return c1.input.checked && c2.input.checked; }
+    function ok() { return consentOk() && /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email.value.trim()); }
+    function refresh() { btn.disabled = !ok(); gbtn.disabled = !consentOk(); }
+    gbtn.addEventListener('click', async function () {
+      if (!consentOk()) return;
+      gbtn.disabled = true; msg.textContent = 'Google खुल रहा है…';
+      try {
+        sessionStorage.setItem('mx.pc', JSON.stringify({ privacy: true, age: true, marketing: c3.input.checked }));
+        await A.googleStart();
+      } catch (e) { msg.textContent = e.message; gbtn.disabled = false; }
+    });
     [c1.input, c2.input, email].forEach(function (x) { x.addEventListener('input', refresh); x.addEventListener('change', refresh); });
     btn.addEventListener('click', async function () {
       if (!ok()) return;
@@ -42,10 +52,10 @@
     show([h('main', 'wrap', [
       brand(), h('h1', '', ['नमस्ते! अपना बाज़ार शुरू कीजिए']),
       h('p', '', ['ईमेल पर आए कोड से साइन-इन कीजिए। पासवर्ड की ज़रूरत नहीं।']),
-      h('div', 'card', [email]),
       h('div', 'card', [c1.box, c2.box, c3.box,
         h('p', 'fine', ['पहले से कोई टिक नहीं लगा है। सहमति आप कभी भी वापस ले सकते हैं, और माँगने पर आपका डेटा मिटा दिया जाएगा।'])]),
-      btn, msg,
+      h('div', 'card', [email]),
+      btn, h('p', 'or', ['या']), gbtn, msg,
       h('p', 'fine', ['हम सिर्फ़ वही जानकारी लेते हैं जो ज़रूरी है। आपका डेटा भारत में सुरक्षित रहता है।'])
     ])]);
   }
@@ -95,6 +105,19 @@
     ])]);
   }
 
+  async function afterGoogle() {
+    var s = await A.googleFinish();                 // null अगर Google से लौटे नहीं हैं
+    if (!s) return false;
+    var c = null; try { c = JSON.parse(sessionStorage.getItem('mx.pc')); sessionStorage.removeItem('mx.pc'); } catch (e) {}
+    if (c && c.privacy && c.age) {
+      await A.rpc('record_consent', { p_purpose: 'privacy_notice', p_granted: true, p_version: C.NOTICE_VERSION });
+      await A.rpc('record_consent', { p_purpose: 'age_18plus', p_granted: true, p_version: C.NOTICE_VERSION });
+      if (c.marketing) await A.rpc('record_consent', { p_purpose: 'marketing', p_granted: true, p_version: C.NOTICE_VERSION });
+    }
+    return true;
+  }
+
   if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(function () {});
-  A.session().then(function (s) { return s ? home() : signIn(); });
+  afterGoogle().then(function (done) { return done ? home() : A.session().then(function (s) { return s ? home() : signIn(); }); })
+    .catch(function (e) { signIn(); var m = document.querySelector('.msg'); if (m) m.textContent = e.message; });
 })();

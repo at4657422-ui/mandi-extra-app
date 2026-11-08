@@ -17,3 +17,5 @@ h1{font-size:24px;margin:18px 0 6px;color:var(--navy)}p{color:var(--muted);line-
 .link{background:none;border:0;color:var(--em);font-size:14px;margin-top:10px;padding:8px;width:100%}
 .btn.ghost{background:#fff;color:var(--ink);border:1.5px solid var(--line)}
 .btn.danger{background:#fff;color:#B42318;border:1.5px solid #F4C7C3}
+.btn.google{background:#fff;color:var(--ink);border:1.5px solid var(--line)}
+.or{text-align:center;color:var(--muted);font-size:13px;margin-top:12px}
