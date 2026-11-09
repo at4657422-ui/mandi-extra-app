@@ -9,7 +9,7 @@ const { chromium } = require('playwright');
   console.log('tiles:', await p.$$eval('.tile',x=>x.length), 'banners:', await p.$$eval('.slide',x=>x.length));
   await p.screenshot({path:'/tmp/h1.png'});
   const t0 = await p.$eval('.track',e=>e.style.transform); await p.waitForTimeout(5000); const t1 = await p.$eval('.track',e=>e.style.transform); console.log('auto-advance:', t0,'->',t1);
-  await p.click('.tile >> nth=8'); await p.waitForSelector('.cathead'); console.log('category page:', await p.textContent('.cathead h1')); await p.screenshot({path:'/tmp/h2.png'});
+  await p.click('.tile >> nth=8'); await p.waitForSelector('.chero'); console.log('category page:', await p.textContent('.chero h1')); await p.screenshot({path:'/tmp/h2.png'});
   await p.click('.tab[data-tab=rank]'); console.log('rank empty:', (await p.textContent('.empty h2')));
   await p.click('.tab[data-tab=me]'); console.log('me has signout:', await p.$$eval('.btn',x=>x.map(e=>e.textContent)));
   await p.click('.tab[data-tab=home]'); await p.waitForSelector('.listen'); 
