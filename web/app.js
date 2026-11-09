@@ -39,41 +39,70 @@
     return b;
   }
 
-  // ---- सहमति: एक साफ़ क्रिया "सहमत हूँ, आगे बढ़ें" (पहले से कोई टिक नहीं; समय-मुहर के साथ दर्ज) ----
-  function askConsent(next) {
-    var mkt = h('input'); mkt.type = 'checkbox'; mkt.id = 'c-mkt'; mkt.checked = false;
-    var mk = h('label', 'cb', [mkt, h('span', '', ['मुझे ऑफ़र और ख़बरें भेजी जाएँ (वैकल्पिक)'])]); mk.htmlFor = 'c-mkt';
-    openSheet('आगे बढ़ने से पहले', [
-      h('p', 'lead', ['मैं पुष्टि करता/करती हूँ कि मेरी उम्र 18 साल या उससे ज़्यादा है, और मैंने प्राइवेसी नोटिस पढ़कर उससे सहमति दी है।']),
-      h('p', 'fine', ['हम सिर्फ़ ज़रूरी जानकारी लेते हैं, जो भारत में सुरक्षित रहती है। सहमति आप कभी भी सेटिंग से वापस ले सकते हैं, और माँगने पर आपका डेटा मिटा दिया जाएगा।']),
-      mk, listenBtn('v02_sahmati.mp3'),
-      btn('सहमत हूँ, आगे बढ़ें', '', function () {
-        var c = { privacy: true, age: true, marketing: mkt.checked };
-        try { sessionStorage.setItem('mx.pc', JSON.stringify(c)); } catch (e) {}
-        closeSheet(); next(c);
-      }),
-      btn('रद्द करें', 'ghost', closeSheet)
-    ]);
-  }
-  async function recordConsent(c) {
-    if (!c || !c.privacy || !c.age) return;
+  // ---- सहमति: ऐप खुलते ही पहली स्क्रीन। पहले से कोई टिक नहीं; "सहमत हूँ" दबाना ही सहमति है; समय-मुहर के साथ दर्ज ----
+  function getConsent() { try { var c = JSON.parse(localStorage.getItem('mx.pc')); return c && c.v === C.NOTICE_VERSION ? c : null; } catch (e) { return null; } }
+  function putConsent(c) { try { localStorage.setItem('mx.pc', JSON.stringify(c)); } catch (e) {} }
+  async function recordConsent() {
+    var c = getConsent(); if (!c || c.done) return;
     await A.rpc('record_consent', { p_purpose: 'privacy_notice', p_granted: true, p_version: C.NOTICE_VERSION });
     await A.rpc('record_consent', { p_purpose: 'age_18plus', p_granted: true, p_version: C.NOTICE_VERSION });
     if (c.marketing) await A.rpc('record_consent', { p_purpose: 'marketing', p_granted: true, p_version: C.NOTICE_VERSION });
+    c.done = true; putConsent(c);
   }
-  function savedConsent() { try { var c = JSON.parse(sessionStorage.getItem('mx.pc')); sessionStorage.removeItem('mx.pc'); return c; } catch (e) { return null; } }
-
-  // ---- मुख्य साइन-इन पन्ना ----
-  function signIn() {
+  function deviceId() { try { var d = localStorage.getItem('mx.dev'); if (!d) { var a = new Uint8Array(16); crypto.getRandomValues(a); d = Array.prototype.map.call(a, function (x) { return ('0' + x.toString(16)).slice(-2); }).join(''); localStorage.setItem('mx.dev', d); } return d; } catch (e) { return 'nodevice' + Date.now(); } }
+  function sw(id, icon, title, sub) {
+    var i = h('input'); i.type = 'checkbox'; i.id = id; i.checked = false; i.className = 'swi';
+    var l = h('label', 'perm', [h('span', 'pic', [icon]), h('span', 'ptx', [h('b', '', [title]), h('span', '', [sub])]), i, h('span', 'swt')]); l.htmlFor = id;
+    return { el: l, input: i };
+  }
+  function welcome() {
+    var pn = sw('p-n', '🔔', 'सूचनाएँ', 'नए सौदे और संदेश की ख़बर'), pl = sw('p-l', '📍', 'लोकेशन', 'पास के विक्रेता और ख़रीदार'), pm = sw('p-m', '📣', 'ऑफ़र और ख़बरें', 'कभी-कभार, बंद करना आसान');
     var msg = msgBox();
+    show([h('main', 'wrap wel', [
+      h('div', 'wel-top', [brand()]),
+      h('h1', '', ['हर सामान, हर बाज़ार']),
+      h('p', 'lead', ['सीधे विक्रेता से ख़रीदिए और बेचिए। शुरू करने से पहले दो बातें।']),
+      h('div', 'card', [
+        h('h3', '', ['आपकी मर्ज़ी की इजाज़तें']),
+        h('p', 'fine', ['ये सब बंद हैं। जो चाहें खोलिए। बाद में सेटिंग से बदल सकते हैं।']),
+        pn.el, pl.el, pm.el
+      ]),
+      h('div', 'card need', [
+        h('h3', '', ['ज़रूरी सहमति']),
+        h('p', '', ['मैं 18 साल या उससे ज़्यादा उम्र का/की हूँ, और प्राइवेसी नोटिस पढ़कर उससे सहमत हूँ।']),
+        h('p', 'fine', ['हम सिर्फ़ ज़रूरी जानकारी लेते हैं, जो भारत में सुरक्षित रहती है। सहमति कभी भी वापस ले सकते हैं, और माँगने पर आपका डेटा मिटा दिया जाएगा।']),
+        listenBtn('v02_sahmati.mp3')
+      ]),
+      btn('सहमत हूँ, आगे बढ़ें', 'big', function () {
+        putConsent({ v: C.NOTICE_VERSION, at: Date.now(), marketing: pm.input.checked, notif: pn.input.checked, loc: pl.input.checked, done: false });
+        signIn();
+      }),
+      btn('अभी नहीं', 'link', function () { msg.textContent = 'सहमति के बिना ऐप नहीं चल सकता। आप जब चाहें वापस आ सकते हैं।'; }),
+      msg
+    ])]);
+  }
+
+  // ---- मुख्य साइन-इन पन्ना (सहमति के बाद) ----
+  function signIn() {
+    if (!getConsent()) return welcome();
+    var msg = msgBox();
+    var g = btn('', 'google big', function () { msg.textContent = 'Google खुल रहा है…'; A.googleStart().catch(function (e) { msg.textContent = e.message; }); });
+    g.appendChild(h('span', 'gmark', ['G'])); g.appendChild(document.createTextNode('Google से जारी रखें'));
     show([h('main', 'wrap', [
-      brand(), h('h1', '', ['नमस्ते! अपना बाज़ार शुरू कीजिए']),
-            (function () { var g = btn('', 'google big', function () { askConsent(async function () { msg.textContent = 'Google खुल रहा है…'; try { await A.googleStart(); } catch (e) { msg.textContent = e.message; } }); }); g.appendChild(h('span', 'gmark', ['G'])); g.appendChild(document.createTextNode('Google से जारी रखें')); return g; })(),
-      h('p', 'fine', ['सबसे आसान: एक टैप, कोई कोड या लिंक नहीं।']),
-      btn('ईमेल से जारी रखें', 'ghost', function () { askConsent(emailSheet); }),
-      btn('ईमेल और पासवर्ड से', 'link', function () { askConsent(function () { passwordSheet(false); }); }),
+      h('div', 'wel-top', [brand()]),
+      h('h1', '', ['अपना बाज़ार शुरू कीजिए']),
+      g,
+      h('p', 'fine ctr', ['एक टैप में साइन-इन। कोई कोड या लिंक नहीं।']),
+      h('div', 'or', [h('span', '', ['या'])]),
+      btn('ईमेल से जारी रखें', 'ghost', function () { emailSheet(); }),
+      btn('ईमेल और पासवर्ड से', 'link', function () { passwordSheet(false); }),
       msg,
-      h('p', 'fine', ['आगे बढ़ने पर आपसे सहमति ली जाएगी। पहले से कोई सहमति नहीं मानी जाती।'])
+      h('div', 'trio', [
+        h('div', '', [h('b', '', ['🤝']), h('span', '', ['सीधा सौदा'])]),
+        h('div', '', [h('b', '', ['💸']), h('span', '', ['अधिकतम 2% शुल्क'])]),
+        h('div', '', [h('b', '', ['🛡️']), h('span', '', ['हर साइन-इन की जाँच'])])
+      ]),
+      h('p', 'fine ctr', ['आपका खाता सिर्फ़ आपके Google या ईमेल से खुलता है। नए फ़ोन से साइन-इन होने पर आपको सूचना दिखेगी।'])
     ])]);
   }
 
@@ -95,7 +124,7 @@
     code.addEventListener('input', function () { code.value = code.value.replace(/\D/g, ''); ok.disabled = code.value.length < 6; });
     ok.addEventListener('click', async function () {
       ok.disabled = true; msg.textContent = 'जाँच रहे हैं…';
-      try { await A.verifyCode(e, code.value); await recordConsent(savedConsent()); home(); } catch (er) { msg.textContent = er.message; ok.disabled = false; }
+      try { await A.verifyCode(e, code.value); await recordConsent(); home(); } catch (er) { msg.textContent = er.message; ok.disabled = false; }
     });
     openSheet('अपना ईमेल खोलिए', [
       h('p', 'lead', [e + ' पर हमने ईमेल भेजा है।']),
@@ -132,7 +161,7 @@
       try {
         var s = isNew ? await A.passwordSignUp(e, pw.value) : await A.passwordSignIn(e, pw.value);
         if (!s) { closeSheet(); sentSheet(e); return; }       // पुष्टि का लिंक भेजा गया
-        await recordConsent(savedConsent()); home();
+        await recordConsent(); home();
       } catch (er) { msg.textContent = er.message; go.disabled = false; }
     });
     openSheet(isNew ? 'नया खाता' : 'ईमेल और पासवर्ड', [email, pw, go, msg, sw]);
@@ -141,20 +170,21 @@
   // ---- साइन-इन के बाद ----
   async function home() {
     var s = await A.session(); if (!s) return signIn();
-    var msg = msgBox();
+    var msg = msgBox(); var note = null;
+    try { var r = await A.rpc('record_login', { p_device: deviceId() }); if (r && (r.new_device || r.flag)) note = r.flag ? 'इस आईपी या फ़ोन से असामान्य साइन-इन दिखे हैं। अगर यह आप नहीं हैं तो साइन-आउट करके पासवर्ड बदलिए।' : 'आपके खाते में एक नए फ़ोन से साइन-इन हुआ है। अगर यह आप नहीं हैं तो तुरंत साइन-आउट करके पासवर्ड बदलिए।'; } catch (e) {}
     var out = btn('साइन-आउट', 'ghost', async function () { await A.signOut(); signIn(); });
     var del = btn('मेरा डेटा मिटाने का अनुरोध', 'danger', async function () {
       if (!window.confirm('आपका खाता और डेटा 48 घंटे बाद हमेशा के लिए मिटा दिया जाएगा। आगे बढ़ें?')) return;
       try { var t = await A.rpc('request_deletion'); msg.textContent = 'अनुरोध दर्ज हुआ। मिटाने का समय: ' + new Date(t).toLocaleString('hi-IN') + '। तब तक आप इसे रद्द कर सकते हैं।'; }
       catch (e) { msg.textContent = e.message; }
     });
-    show(window.MXHome.render({ email: s.email, signOutBtn: out, deleteBtn: del, msg: msg }));
+    show(window.MXHome.render({ email: s.email, signOutBtn: out, deleteBtn: del, msg: msg, note: note }));
   }
 
   async function afterRedirect() {
     var s = A.linkFinish() || await A.googleFinish();     // Google या ईमेल-लिंक से लौटे?
     if (!s) return false;
-    await recordConsent(savedConsent());
+    await recordConsent();
     return true;
   }
 

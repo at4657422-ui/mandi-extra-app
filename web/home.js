@@ -9,7 +9,9 @@
   var DEFAULT_BANNERS = [
     { cls: 'b1', icon: '🤝', title: 'सीधा सौदा, कोई बिचौलिया नहीं', sub: 'ख़रीदार और विक्रेता आमने-सामने बात करते हैं' },
     { cls: 'b2', icon: '💸', title: 'कमीशन सिर्फ़ 2%', sub: 'कारीगरों के लिए सिर्फ़ 1%, सौदा हो तभी लगता है' },
-    { cls: 'b3', icon: '🏪', title: 'अपनी दुकान, अपना ब्रांड', sub: 'पहले विक्रेता बनिए और अपना बाज़ार सजाइए' }
+    { cls: 'b3', icon: '🏪', title: 'अपनी दुकान, अपना ब्रांड', sub: 'पहले विक्रेता बनिए और अपना बाज़ार सजाइए' },
+    { cls: 'b1', icon: '🎬', title: 'क्रिएटर क्लब', sub: 'असली बिक्री पर कमाई, हर महीने पूरी रिपोर्ट के साथ' },
+    { cls: 'b2', icon: '🛡️', title: 'सुरक्षित सौदा', sub: 'पैसा सीधे आपके बीच, हर साइन-इन की जाँच' }
   ];
   // श्रेणियाँ (PRD के अनुसार)
   var GROUPS = [
@@ -28,6 +30,12 @@
     ['ठहरना और शादी-इवेंट', '🏨', [['🏨','होटल'],['🛖','गेस्ट हाउस'],['🏛️','मैरिज हॉल'],['🎉','इवेंट-टेंट'],['🎶','DJ-बैंड'],['💐','फूल-सजावट'],['🪭','दूल्हा-दुल्हन सेवा'],['🏕️','घूमना-टूर'],['🚌','यात्रा-बुकिंग']]],
     ['किराये पर', '🔑', [['🏗️','JCB-मशीन'],['🚜','ट्रैक्टर-किराया'],['🪜','सीढ़ी-पाड़'],['🔊','साउंड-माइक'],['🎪','टेंट-कुर्सी'],['🍳','बर्तन-किराया'],['🏍️','बाइक-किराया'],['👗','कपड़े-किराया'],['🛠️','औज़ार-किराया']]],
     ['क्रिएटर और ब्रांड', '🎬', [['🎬','क्रिएटर'],['🏷️','ब्रांड शोकेस'],['🏭','कंपनी-थोक'],['📦','थोक बाज़ार'],['🤝','डीलर-वितरक'],['📣','विज्ञापन-प्रचार'],['🎙️','आवाज़-संगीत'],['🖌️','डिज़ाइन-लोगो']]]
+    ,['मशीनरी और उद्योग', '⚙️', [['⚙️','औद्योगिक मशीन'],['🏭','फ़ैक्ट्री का सामान'],['🔩','नट-बोल्ट-बेयरिंग'],['🛢️','तेल-ग्रीस'],['🧪','केमिकल'],['🧯','सुरक्षा उपकरण'],['🪛','वेल्डिंग-कटिंग'],['🔋','जनरेटर-मोटर'],['📏','नापतोल-तराज़ू'],['🧲','पाइप-फ़िटिंग']]],
+    ['पैकिंग और काग़ज़', '📦', [['📦','डिब्बे-कार्टन'],['🛍️','प्लास्टिक-थैले'],['🧾','काग़ज़-रोल'],['🖨️','छपाई-पैंफ़लेट'],['🏷️','लेबल-स्टिकर'],['🧃','बोतल-जार'],['🪢','रस्सी-टेप'],['🗞️','रद्दी-कबाड़']]],
+    ['सेहत और ब्यूटी', '💄', [['💄','मेकअप'],['🧴','स्किन-हेयर केयर'],['🪒','पुरुष ग्रूमिंग'],['🩹','प्राथमिक उपचार'],['🦷','ओरल केयर'],['🌿','आयुर्वेद-घरेलू'],['🏋️','जिम-फ़िटनेस'],['♿','सहायक उपकरण']]],
+    ['खेल, संगीत और शौक', '🎵', [['🏏','क्रिकेट-खेल'],['⚽','फ़ुटबॉल-बैडमिंटन'],['🎸','वाद्य यंत्र'],['🎨','कला-क्राफ़्ट'],['🎣','मछली पकड़ना'],['🏕️','ट्रेकिंग-कैंपिंग'],['🧩','बोर्ड गेम'],['📿','माला-पूजा-धर्म']]],
+    ['पुराना और बचत बाज़ार', '♻️', [['♻️','पुराना सामान'],['📱','पुराने मोबाइल'],['🛋️','पुराना फ़र्नीचर'],['🚲','पुरानी साइकिल-बाइक'],['📚','पुरानी किताबें'],['🔧','पुरानी मशीनें'],['🎁','ज़रूरतमंद को दान']]],
+    ['बच्चे और परिवार', '🧸', [['🍼','बेबी केयर'],['🛒','बेबी प्रोडक्ट्स'],['🎒','स्कूल यूनिफ़ॉर्म'],['🧸','खिलौने-गेम'],['🛏️','झूला-पालना'],['📖','बच्चों की किताबें'],['🎂','जन्मदिन सामान']]]
   ];
   var CATS = [], CI = 0;
   GROUPS.forEach(function (g, gi) { g[2].forEach(function (c) { CATS.push([c[0], c[1], 'k' + (CI++ % 16 + 1), g[0], gi, g[1]]); }); });
@@ -109,30 +117,50 @@
       Array.prototype.forEach.call(tabs.children, function (t) { t.classList.toggle('on', t.dataset.tab === name); });
       if (name === 'home') homeTab();
       else if (name === 'cat') catTab(extra);
+      else if (name === 'soon') soonTab(extra);
       else if (name === 'search') searchTab();
       else if (name === 'sell') sellTab();
       else if (name === 'rank') body.appendChild(emptyState('🏆', 'लीडरबोर्ड अभी ख़ाली है', 'यहाँ वही दुकानें, ब्रांड और क्रिएटर आएँगे जिनके सौदे दोनों पक्षों ने पक्के किए हों। पहला सौदा आपका हो सकता है।'));
       else accountTab();
     }
     function homeTab() {
+      if (ctx.note) body.appendChild(h('div', 'alert', [txt('b', '', '⚠️ सुरक्षा सूचना'), txt('span', '', ctx.note)]));
       var search = h('button', 'searchbar', ['🔍 सामान, दुकान या सेवा खोजिए']); search.type = 'button'; search.addEventListener('click', function () { setTab('search'); });
-      body.appendChild(h('header', 'top', [txt('div', 'hi', 'नमस्ते 👋'), txt('h1', '', 'आज क्या चाहिए?'), search]));
+      var logo = h('img', 'hlogo'); logo.src = '/icons/icon-192.png'; logo.alt = 'मंडी एक्स्ट्रा';
+      body.appendChild(h('header', 'hdr', [logo, search, (function () { var n = h('button', 'bell', ['🔔']); n.type = 'button'; n.setAttribute('aria-label', 'सूचनाएँ'); n.addEventListener('click', function () { setTab('soon', ['🔔', 'सूचनाएँ']); }); return n; })()]));
+      var ql = h('div', 'qlinks');
+      [['📡', 'मंडी लाइव'], ['🧮', 'बिज़नेस कैलकुलेटर'], ['🎬', 'क्रिएटर क्लब'], ['📊', 'रिपोर्ट'], ['🛡️', 'सुरक्षा']].forEach(function (q) {
+        var b = h('button', 'ql', [txt('span', '', q[0]), txt('b', '', q[1])]); b.type = 'button'; b.addEventListener('click', function () { setTab('soon', q); }); ql.appendChild(b);
+      });
+      body.appendChild(ql);
       var slot = h('div', 'bslot'); body.appendChild(slot);
       loadBanners().then(function (rows) { if (!slot.isConnected) return; banner = carousel(rows); slot.appendChild(banner); });
+      var st = h('div', 'stats');
+      [['2%', 'अधिकतम कुल शुल्क'], ['सीधा', 'ख़रीदार से विक्रेता'], ['UTR', 'हर भुगतान का सबूत'], ['18+', 'सिर्फ़ वयस्क']].forEach(function (x) { st.appendChild(h('div', 'st', [txt('b', '', x[0]), txt('span', '', x[1])])); });
+      body.appendChild(st);
+      body.appendChild(txt('h2', 'sec', 'ख़ास श्रेणियाँ'));
+      var feat = h('div', 'hrow big');
+      [0, 12, 26, 36, 44, 58, 68, 82, 90, 104].forEach(function (ix) { var c = CATS[ix]; if (c) feat.appendChild(catCard(c, true)); });
+      body.appendChild(feat);
       body.appendChild(txt('h2', 'sec', 'सारी श्रेणियाँ (' + CATS.length + ')'));
       GROUPS.forEach(function (g, gi) {
-        var band = h('div', 'gband g' + (gi % 8), [txt('span', 'gbi', g[1]), h('div', '', [txt('h3', '', g[0]), txt('div', 'fine', g[2].length + ' श्रेणियाँ')])]);
-        band.classList.add('rv'); body.appendChild(band); watch(band);
-        var grid = h('div', 'grid');
-        CATS.filter(function (c) { return c[4] === gi; }).forEach(function (c, i) {
-          var t = h('button', 'tile rv ' + c[2]); t.type = 'button'; t.style.setProperty('--d', (i % 4) * 0.35 + 's'); t.style.setProperty('--rd', (i % 4) * 70 + 'ms');
-          t.appendChild(txt('span', 'emo', c[0])); t.appendChild(txt('span', 'lbl', c[1]));
-          t.addEventListener('click', function () { setTab('cat', c); });
-          grid.appendChild(t); watch(t);
-        });
-        body.appendChild(grid);
+        var sec = h('section', 'gsec rv');
+        var head = h('div', 'gh g' + (gi % 8), [txt('span', 'gbi', g[1]), h('div', '', [txt('h3', '', g[0]), txt('div', 'fine', g[2].length + ' श्रेणियाँ')])]);
+        var row = h('div', 'hrow');
+        CATS.filter(function (c) { return c[4] === gi; }).forEach(function (c) { row.appendChild(catCard(c)); });
+        sec.appendChild(head); sec.appendChild(row); body.appendChild(sec); watch(sec);
       });
       body.appendChild(listenCard('v17_sab_kuchh_yahan.mp3', 'मंडी एक्स्ट्रा पर क्या-क्या हो सकता है', 'आवाज़ में सुनिए (1 मिनट)'));
+    }
+    function catCard(c, big) {
+      var t = h('button', 'hcard ' + c[2] + (big ? ' big' : '')); t.type = 'button';
+      t.appendChild(txt('span', 'emo', c[0])); t.appendChild(txt('span', 'lbl', c[1]));
+      t.addEventListener('click', function () { setTab('cat', c); }); return t;
+    }
+    function soonTab(q) {
+      var back = h('button', 'back', ['← वापस']); back.type = 'button'; back.addEventListener('click', function () { setTab('home'); });
+      body.appendChild(back);
+      body.appendChild(emptyState(q[0], q[1] + ' जल्द आ रहा है', 'यह हिस्सा अगले चरण में जुड़ रहा है। तब तक सारी श्रेणियाँ देखिए।'));
     }
     function searchTab() {
       var q = h('input', 'field'); q.type = 'search'; q.placeholder = 'श्रेणी खोजिए, जैसे: ट्रैक्टर, साड़ी'; q.maxLength = 40;
@@ -150,11 +178,11 @@
     function catTab(c) {
       var back = h('button', 'back', ['← वापस']); back.type = 'button'; back.addEventListener('click', function () { setTab('home'); });
       body.appendChild(back);
-      var parts = []; for (var i = 0; i < 9; i++) { var pe = txt('span', 'pt', c[0]); pe.style.setProperty('--x', (i * 11 + 4) + '%'); pe.style.setProperty('--dl', (i * 0.7) + 's'); pe.style.setProperty('--sz', (16 + (i % 4) * 8) + 'px'); parts.push(pe); }
-      var hero = h('div', 'chero g' + (c[4] % 8), parts.concat([h('div', 'ctext', [txt('div', 'fine', c[3]), txt('h1', '', c[1]), txt('div', 'csub', 'यहाँ ' + c[1] + ' का सामान, सीधे विक्रेता से')]), txt('span', 'cbig', c[0])]));
+      var parts = []; for (var i = 0; i < 5; i++) { var pe = txt('span', 'pt', c[0]); pe.style.setProperty('--x', (i * 19 + 6) + '%'); pe.style.setProperty('--dl', (i * 1.3) + 's'); pe.style.setProperty('--sz', (14 + (i % 3) * 6) + 'px'); parts.push(pe); }
+      var hero = h('div', 'chero g' + (c[4] % 8), parts.concat([h('div', 'ctext', [txt('div', 'fine', c[3]), txt('h1', '', c[1]), h('div', 'pills', [txt('span', '', 'सीधे विक्रेता से'), txt('span', '', 'अधिकतम 2% शुल्क')])]), h('span', 'cbig', [c[0]])]));
       body.appendChild(hero);
       var cslot = h('div', 'bslot'); body.appendChild(cslot);
-      loadBanners('category:' + c[1]).then(function (rows) { if (!cslot.isConnected) return; banner = carousel(rows, [{ cls: 'b' + (CATS.indexOf(c) % 3 + 1), icon: c[0], title: c[1] + ' में पहले बेचिए', sub: 'आपका सामान इस श्रेणी में सबसे पहले दिखेगा' }]); cslot.appendChild(banner); });
+      loadBanners('category:' + c[1]).then(function (rows) { if (!cslot.isConnected || !rows.length) return; banner = carousel(rows); cslot.appendChild(banner); });
       var sell = h('button', 'btn', ['इस श्रेणी में बेचिए']); sell.type = 'button'; sell.addEventListener('click', function () { setTab('sell'); });
       body.appendChild(emptyState('🌟', 'यहाँ अभी कोई सामान नहीं है', 'आप पहले विक्रेता बन सकते हैं। आपका सामान सबसे पहले दिखेगा।', [sell]));
       if (c[1] === 'निर्माण' || c[1] === 'अनाज-मंडी') body.appendChild(listenCard('v04_shreniyan.mp3', 'श्रेणियों के बारे में सुनिए', 'क्या-क्या बेच सकते हैं'));

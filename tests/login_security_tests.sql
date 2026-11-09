@@ -1,0 +1,11 @@
+set role postgres;
+insert into auth.users(id) values ('00000000-0000-0000-0000-0000000000a1') on conflict do nothing;
+set role authenticated;
+set request.jwt.claim.sub='00000000-0000-0000-0000-0000000000a1';
+select set_config('request.headers','{"x-forwarded-for":"1.2.3.4, 9.9.9.9"}',false);
+select public.record_login('devAAAAAAAA1') as first_login;
+select public.record_login('devAAAAAAAA1') as same_device;
+select public.record_login('devBBBBBBBB2') as new_device;
+reset role; select ip, new_device from public.login_events order by id; set role authenticated;
+select public.record_login('bad dev');
+update public.login_events set ip='x';
