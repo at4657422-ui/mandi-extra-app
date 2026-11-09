@@ -52,11 +52,11 @@
   function deviceId() { try { var d = localStorage.getItem('mx.dev'); if (!d) { var a = new Uint8Array(16); crypto.getRandomValues(a); d = Array.prototype.map.call(a, function (x) { return ('0' + x.toString(16)).slice(-2); }).join(''); localStorage.setItem('mx.dev', d); } return d; } catch (e) { return 'nodevice' + Date.now(); } }
   function sw(id, icon, title, sub) {
     var i = h('input'); i.type = 'checkbox'; i.id = id; i.checked = false; i.className = 'swi';
-    var l = h('label', 'perm', [h('span', 'pic', [icon]), h('span', 'ptx', [h('b', '', [title]), h('span', '', [sub])]), i, h('span', 'swt')]); l.htmlFor = id;
+    var l = h('label', 'perm', [h('span', 'pic', [window.MXIc(icon)]), h('span', 'ptx', [h('b', '', [title]), h('span', '', [sub])]), i, h('span', 'swt')]); l.htmlFor = id;
     return { el: l, input: i };
   }
   function welcome() {
-    var pn = sw('p-n', '🔔', 'सूचनाएँ', 'नए सौदे और संदेश की ख़बर'), pl = sw('p-l', '📍', 'लोकेशन', 'पास के विक्रेता और ख़रीदार'), pm = sw('p-m', '📣', 'ऑफ़र और ख़बरें', 'कभी-कभार, बंद करना आसान');
+    var pn = sw('p-n', 'bell', 'सूचनाएँ', 'नए सौदे और संदेश की ख़बर'), pl = sw('p-l', 'pin', 'लोकेशन', 'पास के विक्रेता और ख़रीदार'), pm = sw('p-m', 'megaphone', 'ऑफ़र और ख़बरें', 'कभी-कभार, बंद करना आसान');
     var msg = msgBox();
     show([h('main', 'wrap wel', [
       h('div', 'wel-top', [brand()]),
@@ -98,9 +98,9 @@
       btn('ईमेल और पासवर्ड से', 'link', function () { passwordSheet(false); }),
       msg,
       h('div', 'trio', [
-        h('div', '', [h('b', '', ['🤝']), h('span', '', ['सीधा सौदा'])]),
-        h('div', '', [h('b', '', ['💸']), h('span', '', ['अधिकतम 2% शुल्क'])]),
-        h('div', '', [h('b', '', ['🛡️']), h('span', '', ['हर साइन-इन की जाँच'])])
+        h('div', '', [window.MXIc('handshake', 'lg'), h('span', '', ['सीधा सौदा'])]),
+        h('div', '', [window.MXIc('rupee', 'lg'), h('span', '', ['अधिकतम 2% शुल्क'])]),
+        h('div', '', [window.MXIc('shield', 'lg'), h('span', '', ['हर साइन-इन की जाँच'])])
       ]),
       h('p', 'fine ctr', ['आपका खाता सिर्फ़ आपके Google या ईमेल से खुलता है। नए फ़ोन से साइन-इन होने पर आपको सूचना दिखेगी।'])
     ])]);

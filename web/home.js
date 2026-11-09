@@ -3,15 +3,21 @@
   'use strict';
   var C = window.MX_CONFIG;
   function h(tag, cls, kids) { var e = document.createElement(tag); if (cls) e.className = cls; (kids || []).forEach(function (k) { e.appendChild(typeof k === 'string' ? document.createTextNode(k) : k); }); return e; }
+  function ic(name, cls) {
+    var NS = 'http://www.w3.org/2000/svg', v = document.createElementNS(NS, 'svg'), u = document.createElementNS(NS, 'use');
+    v.setAttribute('class', 'ic ' + (cls || '')); v.setAttribute('aria-hidden', 'true'); u.setAttribute('href', '/art/ui.svg#' + name); v.appendChild(u); return v;
+  }
+  window.MXIc = ic;
   function txt(tag, cls, t) { var e = h(tag, cls); e.textContent = t; return e; }
 
   // ऐप की अपनी जानकारी वाले बैनर (विज्ञापन/सैंपल नहीं)। एडमिन के बैनर आने पर वे इनकी जगह दिखेंगे।
   var DEFAULT_BANNERS = [
-    { cls: 'b1', icon: '🤝', title: 'सीधा सौदा, कोई बिचौलिया नहीं', sub: 'ख़रीदार और विक्रेता आमने-सामने बात करते हैं' },
-    { cls: 'b2', icon: '💸', title: 'कमीशन सिर्फ़ 2%', sub: 'कारीगरों के लिए सिर्फ़ 1%, सौदा हो तभी लगता है' },
-    { cls: 'b3', icon: '🏪', title: 'अपनी दुकान, अपना ब्रांड', sub: 'पहले विक्रेता बनिए और अपना बाज़ार सजाइए' },
-    { cls: 'b1', icon: '🎬', title: 'क्रिएटर क्लब', sub: 'असली बिक्री पर कमाई, हर महीने पूरी रिपोर्ट के साथ' },
-    { cls: 'b2', icon: '🛡️', title: 'सुरक्षित सौदा', sub: 'पैसा सीधे आपके बीच, हर साइन-इन की जाँच' }
+    { cls: 'sl-deal', art: 'deal', title: 'सीधा सौदा, कोई बिचौलिया नहीं', sub: 'ख़रीदार और विक्रेता आमने-सामने बात करते हैं' },
+    { cls: 'sl-fee', art: 'fee', title: 'कुल शुल्क अधिकतम 2%', sub: 'कारीगरों के लिए सिर्फ़ 1%, सौदा हो तभी लगता है' },
+    { cls: 'sl-shop', art: 'shop', title: 'अपनी दुकान, अपना ब्रांड', sub: 'पहले विक्रेता बनिए और अपना बाज़ार सजाइए' },
+    { cls: 'sl-creator', art: 'creator', title: 'क्रिएटर क्लब', sub: 'असली बिक्री पर कमाई, हर महीने पूरी रिपोर्ट के साथ' },
+    { cls: 'sl-secure', art: 'secure', title: 'सुरक्षित सौदा', sub: 'पैसा सीधे आपके बीच, हर साइन-इन की जाँच' },
+    { cls: 'sl-farm', art: 'farm', title: 'किसान से व्यापारी तक', sub: 'अनाज, पशु, ज़मीन और मशीन, सब एक जगह' }
   ];
   // श्रेणियाँ (PRD के अनुसार)
   var GROUPS = [
@@ -72,7 +78,7 @@
         var im = h('img'); im.alt = ''; im.loading = i ? 'lazy' : 'eager'; im.src = C.SUPABASE_URL + '/storage/v1/object/public/' + encodeURI(it.db.image_path); s.appendChild(im);
         if (it.db.is_sponsored) s.appendChild(txt('span', 'adtag', 'विज्ञापन'));
       } else {
-        s = h('div', 'slide ' + it.cls, [txt('div', 'bicon', it.icon), h('div', 'btext', [txt('b', '', it.title), txt('span', '', it.sub)])]);
+        s = h('div', 'slide ' + it.cls, [h('div', 'btext', [txt('b', '', it.title), txt('span', '', it.sub)])]); if (it.art) { var sc = h('img', 'scene'); sc.src = '/art/b-' + it.art + '.svg'; sc.alt = ''; s.appendChild(sc); }
       }
       track.appendChild(s); slides.push(s);
     });
@@ -93,7 +99,7 @@
 
   function listenCard(file, title, sub) {
     var a = null, b = h('button', 'listen'); b.type = 'button';
-    function label(on) { b.textContent = on ? '⏹ रोकिए' : '🔊 सुनिए'; }
+    function label(on) { b.replaceChildren(ic(on ? 'check' : 'speaker', 'sm'), document.createTextNode(on ? 'रोकिए' : 'सुनिए')); }
     label(false);
     b.addEventListener('click', function () {
       if (a) { a.pause(); a = null; label(false); return; }
@@ -105,7 +111,8 @@
   }
 
   function emptyState(icon, title, body, actions) {
-    return h('div', 'empty', [txt('div', 'eicon', icon), txt('h2', '', title), txt('p', '', body)].concat(actions || []));
+    var ei = h('div', 'eicon'); if (icon.charAt(0) === '#') ei.appendChild(ic(icon.slice(1))); else ei.textContent = icon;
+    return h('div', 'empty', [ei, txt('h2', '', title), txt('p', '', body)].concat(actions || []));
   }
 
   function render(ctx) {
@@ -120,19 +127,19 @@
       else if (name === 'soon') soonTab(extra);
       else if (name === 'search') searchTab();
       else if (name === 'sell') sellTab();
-      else if (name === 'rank') body.appendChild(emptyState('🏆', 'लीडरबोर्ड अभी ख़ाली है', 'यहाँ वही दुकानें, ब्रांड और क्रिएटर आएँगे जिनके सौदे दोनों पक्षों ने पक्के किए हों। पहला सौदा आपका हो सकता है।'));
+      else if (name === 'rank') body.appendChild(emptyState('#trophy', 'लीडरबोर्ड अभी ख़ाली है', 'यहाँ वही दुकानें, ब्रांड और क्रिएटर आएँगे जिनके सौदे दोनों पक्षों ने पक्के किए हों। पहला सौदा आपका हो सकता है।'));
       else accountTab();
     }
     function homeTab() {
-      if (ctx.note) body.appendChild(h('div', 'alert', [txt('b', '', '⚠️ सुरक्षा सूचना'), txt('span', '', ctx.note)]));
-      var search = h('button', 'searchbar', ['🔍 सामान, दुकान या सेवा खोजिए']); search.type = 'button'; search.addEventListener('click', function () { setTab('search'); });
+      var search = h('button', 'searchbar', [ic('search', 'sm'), document.createTextNode('सामान, दुकान या सेवा खोजिए')]); search.type = 'button'; search.addEventListener('click', function () { setTab('search'); });
       var logo = h('img', 'hlogo'); logo.src = '/icons/icon-192.png'; logo.alt = 'मंडी एक्स्ट्रा';
-      body.appendChild(h('header', 'hdr', [logo, search, (function () { var n = h('button', 'bell', ['🔔']); n.type = 'button'; n.setAttribute('aria-label', 'सूचनाएँ'); n.addEventListener('click', function () { setTab('soon', ['🔔', 'सूचनाएँ']); }); return n; })()]));
+      body.appendChild(h('header', 'hdr', [logo, search, (function () { var n = h('button', 'bell', [ic('bell')]); n.type = 'button'; n.setAttribute('aria-label', 'सूचनाएँ'); n.addEventListener('click', function () { setTab('soon', ['#bell', 'सूचनाएँ']); }); return n; })()]));
       var ql = h('div', 'qlinks');
-      [['📡', 'मंडी लाइव'], ['🧮', 'बिज़नेस कैलकुलेटर'], ['🎬', 'क्रिएटर क्लब'], ['📊', 'रिपोर्ट'], ['🛡️', 'सुरक्षा']].forEach(function (q) {
-        var b = h('button', 'ql', [txt('span', '', q[0]), txt('b', '', q[1])]); b.type = 'button'; b.addEventListener('click', function () { setTab('soon', q); }); ql.appendChild(b);
+      [['live', 'मंडी लाइव'], ['calc', 'बिज़नेस कैलकुलेटर'], ['film', 'क्रिएटर क्लब'], ['chart', 'रिपोर्ट'], ['shield', 'सुरक्षा']].forEach(function (q) {
+        var b = h('button', 'ql', [ic(q[0], 'sm'), txt('b', '', q[1])]); b.type = 'button'; b.addEventListener('click', function () { setTab('soon', ['#' + q[0], q[1]]); }); ql.appendChild(b);
       });
       body.appendChild(ql);
+      if (ctx.note) body.appendChild(h('div', 'alert', [ic('shield'), h('div', '', [txt('b', '', 'सुरक्षा सूचना'), txt('span', '', ctx.note)])]));
       var slot = h('div', 'bslot'); body.appendChild(slot);
       loadBanners().then(function (rows) { if (!slot.isConnected) return; banner = carousel(rows); slot.appendChild(banner); });
       var st = h('div', 'stats');
@@ -158,7 +165,7 @@
       t.addEventListener('click', function () { setTab('cat', c); }); return t;
     }
     function soonTab(q) {
-      var back = h('button', 'back', ['← वापस']); back.type = 'button'; back.addEventListener('click', function () { setTab('home'); });
+      var back = h('button', 'back', [ic('back', 'sm'), document.createTextNode(' वापस')]); back.type = 'button'; back.addEventListener('click', function () { setTab('home'); });
       body.appendChild(back);
       body.appendChild(emptyState(q[0], q[1] + ' जल्द आ रहा है', 'यह हिस्सा अगले चरण में जुड़ रहा है। तब तक सारी श्रेणियाँ देखिए।'));
     }
@@ -176,7 +183,7 @@
       q.addEventListener('input', draw); draw();
     }
     function catTab(c) {
-      var back = h('button', 'back', ['← वापस']); back.type = 'button'; back.addEventListener('click', function () { setTab('home'); });
+      var back = h('button', 'back', [ic('back', 'sm'), document.createTextNode(' वापस')]); back.type = 'button'; back.addEventListener('click', function () { setTab('home'); });
       body.appendChild(back);
       var parts = []; for (var i = 0; i < 5; i++) { var pe = txt('span', 'pt', c[0]); pe.style.setProperty('--x', (i * 19 + 6) + '%'); pe.style.setProperty('--dl', (i * 1.3) + 's'); pe.style.setProperty('--sz', (14 + (i % 3) * 6) + 'px'); parts.push(pe); }
       var hero = h('div', 'chero g' + (c[4] % 8), parts.concat([h('div', 'ctext', [txt('div', 'fine', c[3]), txt('h1', '', c[1]), h('div', 'pills', [txt('span', '', 'सीधे विक्रेता से'), txt('span', '', 'अधिकतम 2% शुल्क')])]), h('span', 'cbig', [c[0]])]));
@@ -184,21 +191,21 @@
       var cslot = h('div', 'bslot'); body.appendChild(cslot);
       loadBanners('category:' + c[1]).then(function (rows) { if (!cslot.isConnected || !rows.length) return; banner = carousel(rows); cslot.appendChild(banner); });
       var sell = h('button', 'btn', ['इस श्रेणी में बेचिए']); sell.type = 'button'; sell.addEventListener('click', function () { setTab('sell'); });
-      body.appendChild(emptyState('🌟', 'यहाँ अभी कोई सामान नहीं है', 'आप पहले विक्रेता बन सकते हैं। आपका सामान सबसे पहले दिखेगा।', [sell]));
+      body.appendChild(emptyState('#plus', 'यहाँ अभी कोई सामान नहीं है', 'आप पहले विक्रेता बन सकते हैं। आपका सामान सबसे पहले दिखेगा।', [sell]));
       if (c[1] === 'निर्माण' || c[1] === 'अनाज-मंडी') body.appendChild(listenCard('v04_shreniyan.mp3', 'श्रेणियों के बारे में सुनिए', 'क्या-क्या बेच सकते हैं'));
     }
     function sellTab() {
       body.appendChild(txt('h1', 'pad', 'बेचना शुरू कीजिए'));
-      body.appendChild(emptyState('🏷️', 'विक्रेता बनना जल्द खुल रहा है', 'सामान, दुकान, रेस्टोरेंट, गाड़ी, पशु, ज़मीन और सेवाएँ, सब डालने का पन्ना अगले चरण में जुड़ रहा है। तब तक अपना खाता तैयार रखिए।'));
+      body.appendChild(emptyState('#shield', 'विक्रेता बनना जल्द खुल रहा है', 'सामान, दुकान, रेस्टोरेंट, गाड़ी, पशु, ज़मीन और सेवाएँ, सब डालने का पन्ना अगले चरण में जुड़ रहा है। तब तक अपना खाता तैयार रखिए।'));
     }
     function accountTab() {
       body.appendChild(txt('h1', 'pad', 'मेरा खाता'));
       body.appendChild(h('div', 'card', [txt('p', '', (ctx.email || '') + ' से साइन-इन है।')]));
       body.appendChild(ctx.signOutBtn); body.appendChild(ctx.deleteBtn); body.appendChild(ctx.msg);
     }
-    [['home', '🏠', 'होम'], ['search', '🔍', 'खोजें'], ['sell', '+', 'बेचें'], ['rank', '🏆', 'रैंक'], ['me', '👤', 'मेरा']].forEach(function (t) {
+    [['home', 'home', 'होम'], ['search', 'search', 'खोजें'], ['sell', 'plus', 'बेचें'], ['rank', 'trophy', 'रैंक'], ['me', 'user', 'मेरा']].forEach(function (t) {
       var b = h('button', 'tab' + (t[0] === 'sell' ? ' plus' : '')); b.type = 'button'; b.dataset.tab = t[0];
-      b.appendChild(txt('span', 'ti', t[1])); b.appendChild(txt('span', 'tl', t[2]));
+      var ti = h('span', 'ti', [ic(t[1], t[0] === 'sell' ? 'lg' : '')]); b.appendChild(ti); b.appendChild(txt('span', 'tl', t[2]));
       b.addEventListener('click', function () { setTab(t[0] === 'me' ? 'me' : t[0]); });
       tabs.appendChild(b);
     });
